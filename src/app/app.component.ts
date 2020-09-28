@@ -55,6 +55,7 @@ export class AppComponent {
         var total: number = 0;
 
         for (let person of this.personList) {
+            person.amount = person.amount == null ? 0 : person.amount;
             total += person.amount;
         };
         var average: number = total / this.personList.length;
@@ -82,6 +83,7 @@ export class AppComponent {
     }
 
     private setPayment() {
+        console.log(this._orderService.getOrder())
         var order = this._orderService.getOrder();
 
         this._creditList.map(creditPerson => {
