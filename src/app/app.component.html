@@ -13,11 +13,11 @@
     </div>
     <div *ngIf="isPaymentFinished">
         <div *ngFor="let payment of paymentList">
-            {{payment.debtorPerson.name}}
+            {{payment.creditorPerson.name}}
             le debe
             ${{payment.amount}}
             a ----->
-            {{payment.creditorPerson.name}}
+            {{payment.debtorPerson.name}}
         </div>
     </div>
 </body>

@@ -6,7 +6,7 @@ import { IPayment } from 'src/models/IPayment';
   })
 export class PaymentService {
 
-    private _payment = new Array<IPayment>();
+    private _payments = new Array<IPayment>();
     private _incrementalId: number = 0;
 
     constructor() { }
@@ -16,11 +16,16 @@ export class PaymentService {
         return this._incrementalId;
     }
 
-    getPayment(): Array<IPayment> {
-        return this._payment;
+    getPayments(): Array<IPayment> {
+        return this._payments;
     }
 
     pushPayment(payment: IPayment) {
-        this._payment.push(payment);
+        this._payments.push(payment);
+    }
+    
+    cleanPayments() {
+        this._incrementalId = 0;
+        this._payments = new Array<IPayment>();
     }
 }

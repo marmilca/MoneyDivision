@@ -19,25 +19,21 @@ export class AppComponent {
 
     isPaymentFinished: boolean = false;
 
-    private _creditList = new Array<IPerson>();
-    private _debitList = new Array<IPerson>();
-
-    private _incrementId: number = 1;
+    private _creditList;
+    private _debitList;
 
     constructor(private _orderService: OrderService,
         private _paymentService: PaymentService) { }
 
     pushList() {
-        this._incrementId = 1;
         if (this.personCount > 0) {
             this.personList = new Array<IPerson>();
             this.hasPerson = true;
 
             for (let index = 0; index < this.personCount; index++) {
                 var person = <IPerson>{
-                    id: this._incrementId
+                    id: index
                 }
-                this._incrementId++;
                 this.personList.push(person);
             }
         } else {
@@ -46,6 +42,9 @@ export class AppComponent {
     }
 
     calculate() {
+        this._debitList = new Array<IPerson>();
+        this._creditList = new Array<IPerson>();
+        this._paymentService.cleanPayments();
         this.setOrder();
 
         this.setPayment();
@@ -63,12 +62,26 @@ export class AppComponent {
         for (let person of this.personList) {
             if (average == person.amount) {
                 person.state = StateEnum.Settled;
-            } else if (average > person.amount) {
-                person.state = StateEnum.Debit;
-                this._debitList.push(person);
             } else if (average < person.amount) {
+                person.state = StateEnum.Debit;
+                var debitPerson = <IPerson>{
+                    id: person.id,
+                    amount: person.amount,
+                    name: person.name,
+                    orderId: person.orderId,
+                    state: person.state
+                }
+                this._debitList.push(debitPerson);
+            } else if (average > person.amount) {
                 person.state = StateEnum.Credit;
-                this._creditList.push(person);
+                var creditPerson = <IPerson>{
+                    id: person.id,
+                    amount: person.amount,
+                    name: person.name,
+                    orderId: person.orderId,
+                    state: person.state
+                }
+                this._creditList.push(creditPerson);
             }
         };
 
@@ -83,14 +96,16 @@ export class AppComponent {
     }
 
     private setPayment() {
-        console.log(this._orderService.getOrder())
         var order = this._orderService.getOrder();
 
         this._creditList.map(creditPerson => {
-            var credit = creditPerson.amount - order.average;
+            var credit = order.average - creditPerson.amount;
+
             for (let debitPerson of this._debitList) {
+
                 if (debitPerson.state != StateEnum.Settled && creditPerson.state != StateEnum.Settled) {
-                    var debit = order.average - debitPerson.amount;
+                    var debit = debitPerson.amount - order.average;
+                    
                     if (credit >= debit) {
                         var rest = credit - debit;
                         credit = rest;
@@ -110,15 +125,18 @@ export class AppComponent {
                         this._paymentService.pushPayment(payment);
                     } else if (credit < debit) {
                         var rest = debit - credit;
-                        credit = 0;
+                        debitPerson.amount = debitPerson.amount - credit;
+
                         creditPerson.state = StateEnum.Settled;
 
                         var payment = <IPayment>{
                             id: this._paymentService.incrementalId,
-                            amount: rest,
+                            amount: credit,
                             debtorPerson: debitPerson,
                             creditorPerson: creditPerson
                         }
+                        
+                        credit = 0;
                         this._paymentService.pushPayment(payment);
 
                     }
@@ -127,7 +145,7 @@ export class AppComponent {
 
         });
 
-        this.paymentList = this._paymentService.getPayment();
+        this.paymentList = this._paymentService.getPayments();
 
         this.isPaymentFinished = true;
     }
